@@ -1,11 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Entity;
 
 use App\Repository\ExpenseRepository;
-use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: ExpenseRepository::class)]
 class Expense
@@ -13,18 +13,18 @@ class Expense
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    private ?int $id = null;
+    private int $id;
 
-    #[ORM\Column(type: Types::DATE_MUTABLE)]
-    private ?\DateTimeInterface $date = null;
+    #[ORM\Column(type: 'date')]
+    private \DateTimeInterface $date;
 
-    #[ORM\Column(type: Types::TIME_MUTABLE, nullable: true)]
+    #[ORM\Column(type: 'time', nullable: true)]
     private ?\DateTimeInterface $time = null;
 
-    #[ORM\Column(type: Types::TEXT)]
+    #[ORM\Column(type: 'text')]
     private string $description;
 
-    #[ORM\Column(type: Types::FLOAT, precision: 10, scale: 2)]
+    #[ORM\Column(type: 'integer')]
     private float $amount;
 
     #[ORM\Column(length: 255, nullable: true)]
@@ -35,27 +35,25 @@ class Expense
         return $this->id;
     }
 
-    public function getDate(): ?\DateTimeInterface
+    public function getDate(): string
     {
-        return $this->date;
+        return $this->date->format('Y-m-d');
     }
 
-    public function setDate(\DateTimeInterface $date): static
+    public function setDate(\DateTimeInterface $date): self
     {
         $this->date = $date;
-
         return $this;
     }
 
-    public function getTime(): ?\DateTimeInterface
+    public function getTime(): ?string
     {
-        return $this->time;
+        return $this->time?->format('H:i:s');
     }
 
-    public function setTime(?\DateTimeInterface $time): static
+    public function setTime(?\DateTimeInterface $time): self
     {
         $this->time = $time;
-
         return $this;
     }
 
@@ -64,22 +62,20 @@ class Expense
         return $this->description;
     }
 
-    public function setDescription(string $description): static
+    public function setDescription(string $description): self
     {
         $this->description = $description;
-
         return $this;
     }
 
-    public function getAmount(): ?int
+    public function getAmount(): ?float
     {
         return $this->amount;
     }
 
-    public function setAmount(int $amount): static
+    public function setAmount(float $amount): self
     {
         $this->amount = $amount;
-
         return $this;
     }
 
@@ -88,10 +84,9 @@ class Expense
         return $this->comment;
     }
 
-    public function setComment(?string $comment): static
+    public function setComment(?string $comment): self
     {
         $this->comment = $comment;
-
         return $this;
     }
 }

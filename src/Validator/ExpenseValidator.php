@@ -1,8 +1,9 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Validator;
 
-use Symfony\Component\Validator\Constraints\Regex;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Component\Validator\Constraints as Assert;
 
@@ -14,21 +15,22 @@ class ExpenseValidator
     {
         $this->validator = $validator;
     }
+
     public function validate(array $data): array
     {
         $constraints = new Assert\Collection([
             'date' => [
                 new Assert\NotBlank([
                     'message' => 'Date cannot be blank.',
-            ]),
+                ]),
                 new Assert\Date(),
                 new Assert\LessThanOrEqual('today', message: 'The date cannot be in the future')
-                ],
+            ],
             'time' => new Assert\Time(),
             'description' => [
                 new Assert\NotBlank([
-                'message' => 'Description cannot be blank.',
-            ]),
+                    'message' => 'Description cannot be blank.',
+                ]),
                 new Assert\Length([
                     'min' => 2,
                     'max' => 500,

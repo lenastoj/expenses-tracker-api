@@ -16,15 +16,23 @@ class UserType extends AbstractType
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder
-            ->add('name', TextType::class, ['constraints' => [
-                new Regex([
-                    'pattern' => '/^[^\d]+$/',
-                    'message' => 'First name cannot contain numbers'
-                ]),
-                new NotBlank(),
-                new Length(['min' => 4, 'max' => 6, 'minMessage' => 'First name must be at least {{ limit }} characters long', 'maxMessage' => 'First name must be maximum {{ limit }} characters long'])
-            ]])
-        ;
+            ->add('name', TextType::class, [
+                'constraints' => [
+                    new Regex([
+                        'pattern' => '/^[^\d]+$/',
+                        'message' => 'First name cannot contain numbers'
+                    ]),
+                    new NotBlank(),
+                    new Length(
+                        [
+                            'min' => 4,
+                            'max' => 6,
+                            'minMessage' => 'First name must be at least {{ limit }} characters long',
+                            'maxMessage' => 'First name must be maximum {{ limit }} characters long'
+                        ]
+                    )
+                ]
+            ]);
     }
 
     public function configureOptions(OptionsResolver $resolver): void

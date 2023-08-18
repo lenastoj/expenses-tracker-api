@@ -20,9 +20,21 @@ class ExpenseRepository extends ServiceEntityRepository
     {
         parent::__construct($registry, Expense::class);
     }
+
     public function save(Expense $expense): void
     {
         $this->getEntityManager()->persist($expense);
+        $this->getEntityManager()->flush();
+    }
+
+    public function getAll(): array
+    {
+        return $this->findAll();
+    }
+
+    public function delete(Expense $expense): void
+    {
+        $this->getEntityManager()->remove($expense);
         $this->getEntityManager()->flush();
     }
 }

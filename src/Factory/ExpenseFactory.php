@@ -7,17 +7,26 @@ use DateTime;
 
 class ExpenseFactory
 {
+    private function setExpenseProperties(Expense $expense, array $requestData): void
+    {
+        $expense
+            ->setDate(new DateTime($requestData['date']))
+            ->setDescription($requestData['description'])
+            ->setAmount(intval($requestData['amount'] * 100))
+            ->setTime($requestData['time'] ? new DateTime($requestData['time']) : null)
+            ->setComment($requestData['comment'] ?? null);
+    }
+
     public function createExpense(array $requestData): Expense
     {
         $expense = new Expense();
-
-        $expense
-            ->setDate(new DateTime($requestData['date']))
-            ->setTime(new DateTime($requestData['time']))
-            ->setDescription($requestData['description'])
-            ->setAmount($requestData['amount'])
-            ->setComment($requestData['comment']);
+        $this->setExpenseProperties($expense, $requestData);
 
         return $expense;
+    }
+
+    public function updateExpense(Expense $expense, array $requestData): void
+    {
+        $this->setExpenseProperties($expense, $requestData);
     }
 }
