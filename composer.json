@@ -7,9 +7,11 @@
     "php": ">=8.1",
     "ext-ctype": "*",
     "ext-iconv": "*",
+    "api-platform/core": "*",
     "doctrine/doctrine-bundle": "^2.10",
     "doctrine/doctrine-migrations-bundle": "^3.2",
     "doctrine/orm": "^2.16",
+    "lexik/jwt-authentication-bundle": "^2.19",
     "nelmio/cors-bundle": "^2.3",
     "psalm/plugin-symfony": "^5.0",
     "symfony/console": "6.3.*",
@@ -75,6 +77,8 @@
     "symfony/browser-kit": "6.3.*",
     "symfony/css-selector": "6.3.*",
     "symfony/maker-bundle": "^1.50",
-    "symfony/phpunit-bridge": "^6.3"
+    "symfony/phpunit-bridge": "^6.3",
+    "symfony/stopwatch": "6.3.*",
+    "symfony/web-profiler-bundle": "6.3.*"
   }
 }

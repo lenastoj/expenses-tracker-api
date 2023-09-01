@@ -4,8 +4,17 @@ nelmio_cors:
         allow_credentials: true
         allow_origin: ['*']
         allow_methods: ['GET', 'OPTIONS', 'POST', 'PUT', 'PATCH', 'DELETE']
-        allow_headers: ['Content-Type', 'Authorization']
-        expose_headers: ['Link']
+        allow_headers: ['Content-Type', 'Authorization', 'Set-Cookie']
+        expose_headers: ['Link', 'Authorization', 'Set-Cookie']
         max_age: 3600
     paths:
-        '^/': null
+        '^/api': null
+
+#    paths:
+#        '^/api':
+##            allow_origin: [ 'https://your-frontend-domain.com' ]  # Specify the exact allowed frontend origin(s)
+#            allow_headers: [ 'Authorization', 'Content-Type', 'Set-Cookie' ]  # Include 'Set-Cookie' if you're sending cookies from the frontend
+#            allow_methods: [ 'GET', 'POST', 'PUT', 'PATCH', 'DELETE' ]
+#            expose_headers: [ 'Authorization', 'Set-Cookie' ]  # Expose headers that the frontend needs to access
+#            max_age: 3600
+#            allow_credentials: true

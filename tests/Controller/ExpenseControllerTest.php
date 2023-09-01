@@ -2,129 +2,162 @@
 
 namespace App\Tests\Controller;
 
+use App\Repository\UserRepository;
+use App\Tests\Constants\ExpenseData;
+use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Symfony\Component\HttpFoundation\Response;
 
 class ExpenseControllerTest extends WebTestCase
 {
-    /**
-     * @dataProvider provideTestData
-     */
-    public function testCreateExpense($requestData, $expectedStatusCode, $expectedErrorMessage = null): void
+    private UserRepository|null $userRepository;
+    private KernelBrowser $client;
+
+    protected function setUp(): void
     {
-        $client = static::createClient();
-        $client->request(
+        $this->client = static::createClient();
+        $container = static::getContainer();
+        $this->userRepository = $container->get(UserRepository::class);
+    }
+
+    private function responseCheck($response, $expectedStatusCode, $expectedErrorMessage): void
+    {
+        $statusCode = $response->getStatusCode();
+        $content = $response->getContent();
+
+        $this->assertEquals($expectedStatusCode, $statusCode);
+        if ($statusCode > 300) {
+            $decodedContent = json_decode($content, true);
+            $this->assertEquals($expectedErrorMessage, $decodedContent, "Error messages mismatch");
+        }
+    }
+
+    /**
+     * @dataProvider provideCreateData
+     */
+    public function testCreateExpense(
+        $requestData,
+        $expectedStatusCode,
+        $expectedErrorMessage = null
+    ): void {
+        $testUser = $this->userRepository->findOneBy(['email' => 'pera@mail.com']);
+        $this->client->loginUser($testUser);
+
+        $this->client->request(
             'POST',
-            '/expenses',
+            '/api/expenses',
             [],
             [],
             ['CONTENT_TYPE' => 'application/json'],
             json_encode($requestData)
         );
 
-        $response = $client->getResponse();
-        $statusCode = $response->getStatusCode();
-        $content = $response->getContent();
-
-        $this->assertEquals($expectedStatusCode, $statusCode);
-        if ($statusCode === 400) {
-            $decodedContent = json_decode($content, true);
-            $this->assertEquals($expectedErrorMessage, $decodedContent, "Error messages mismatch");
-        }
+        $response = $this->client->getResponse();
+        $this->responseCheck($response, $expectedStatusCode, $expectedErrorMessage);
     }
 
-    public function provideTestData(): array
+    public function provideCreateData(): array
     {
-        return [
-            [
-                [
-                    'date' => '2023-08-14',
-                    'time' => '16:00:00',
-                    'description' => 'Sample expense',
-                    'amount' => 100.00,
-                    'comment' => 'Sample comment'
-                ],
-                200,
-                [
-                    'message' => 'Expense created successfully'
-                ]
-            ],
-            [
-                [
-                    'date' => 'invalid_date',
-                    'time' => '17:00:00',
-                    'description' => 'Invalid date format',
-                    'amount' => 50.00,
-                    'comment' => 'Sample comment'
-                ],
-                400,
-                [
-                    'date' => ['This value is not a valid date.'],
-                ],
-            ],
-            [
-                [
-                    'date' => '2023-08-14',
-                    'time' => '17:00:00',
-                    'description' => 'i',
-                    'amount' => 50.00,
-                    'comment' => 'Sample comment'
-                ],
-                400,
-                [
-                    'description' => ['Description cannot be less than 2 characters.'],
-                ],
-            ],
-            [
-                [
-                    'date' => '2023-08-14',
-                    'time' => '17:00:00',
-                    'description' => 'i',
-                    'amount' => -50.00,
-                    'comment' => ''
-                ],
-                400,
-                [
-                    'description' => ['Description cannot be less than 2 characters.'],
-                    'amount' => ['Amount must be a positive number.']
-                ],
-            ],
-            [
-                [
-                    'date' => '2023-08-14',
-                    'time' => '17:00:',
-                    'description' => 'description',
-                    'amount' => 50.00,
-                    'comment' => 'comment'
-                ],
-                400,
-                [
-                    'time' => ['This value is not a valid time.'],
-                ]
-            ],
-            [
-                [
-                    'date' => '2023-08-14',
-                    'time' => '17:00:',
-                    'description' => 'description',
-                    'amount' => 50.00
-                ],
-                400,
-                [
-                    'time' => ['This value is not a valid time.'],
-                    'comment' => ['This field is missing.'],
-                ]
-            ],
-            [
-                [],
-                400,
-                [
-                    'date' => ['This field is missing.'],
-                    'time' => ['This field is missing.'],
-                    'description' => ['This field is missing.'],
-                    'amount' => ['This field is missing.'],
-                    'comment' => ['This field is missing.'],
-                ]
-            ],
-        ];
+        return ExpenseData::CREATE_DATA;
+    }
+
+    /**
+     * @dataProvider provideDeleteData
+     */
+    public function testDeleteExpense(
+        $id,
+        $expectedStatusCode,
+        $expectedErrorMessage = null
+    ): void {
+        $testUser = $this->userRepository->findOneBy(['email' => 'pera@mail.com']);
+        $this->client->loginUser($testUser);
+        $this->client->request(
+            'DELETE',
+            '/api/expenses/' . $id,
+        );
+
+        $response = $this->client->getResponse();
+        $this->responseCheck($response, $expectedStatusCode, $expectedErrorMessage);
+    }
+
+    public function provideDeleteData(): array
+    {
+        return ExpenseData::DELETE_DATA;
+    }
+
+    /**
+     * @dataProvider provideUpdateData
+     */
+    public function testUpdateExpense(
+        $id,
+        $requestData,
+        $expectedStatusCode,
+        $expectedErrorMessage = null
+    ): void {
+        $testUser = $this->userRepository->findOneBy(['email' => 'pera@mail.com']);
+        $this->client->loginUser($testUser);
+        $this->client->request(
+            'PUT',
+            '/api/expenses/' . $id,
+            [],
+            [],
+            ['CONTENT_TYPE' => 'application/json'],
+            json_encode($requestData)
+        );
+        $response = $this->client->getResponse();
+        $this->responseCheck($response, $expectedStatusCode, $expectedErrorMessage);
+    }
+
+    public function provideUpdateData(): array
+    {
+        return ExpenseData::UPDATE_DATA;
+    }
+
+    /**
+     * @dataProvider provideShowSingleData
+     */
+    public function testShowSingleExpense(
+        $id,
+        $expectedStatusCode,
+        $expectedErrorMessage = null
+    ): void {
+        $testUser = $this->userRepository->findOneBy(['email' => 'pera@mail.com']);
+        $this->client->loginUser($testUser);
+        $this->client->request(
+            'GET',
+            '/api/expenses/' . $id,
+        );
+
+        $response = $this->client->getResponse();
+        $this->responseCheck($response, $expectedStatusCode, $expectedErrorMessage);
+    }
+
+    public function provideShowSingleData(): array
+    {
+        return ExpenseData::SHOW_SINGLE_DATA;
+    }
+
+    /**
+     * @dataProvider provideShowExpensesData
+     */
+    public function testShowExpenses(
+        $page,
+        $expectedStatusCode,
+        $expectedErrorMessage = null
+    ): void {
+        $testUser = $this->userRepository->findOneBy(['email' => 'pera@mail.com']);
+        $this->client->loginUser($testUser);
+
+        $this->client->request(
+            'GET',
+            '/api/expenses?page=' . $page,
+        );
+        $response = $this->client->getResponse();
+        $this->responseCheck($response, $expectedStatusCode, $expectedErrorMessage);
+    }
+
+    public function provideShowExpensesData(): array
+    {
+        return ExpenseData::SHOW_DATA;
     }
 }

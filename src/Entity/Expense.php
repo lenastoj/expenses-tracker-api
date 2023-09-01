@@ -6,6 +6,7 @@ namespace App\Entity;
 
 use App\Repository\ExpenseRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Security\Core\User\UserInterface;
 
 #[ORM\Entity(repositoryClass: ExpenseRepository::class)]
 class Expense
@@ -24,11 +25,15 @@ class Expense
     #[ORM\Column(type: 'text')]
     private string $description;
 
-    #[ORM\Column(type: 'integer')]
+    #[ORM\Column(type: 'decimal', precision: 10, scale: 2)]
     private float $amount;
 
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $comment = null;
+
+    #[ORM\ManyToOne(inversedBy: 'expenses')]
+    #[ORM\JoinColumn(nullable: false)]
+    private User $user;
 
     public function getId(): ?int
     {
@@ -87,6 +92,18 @@ class Expense
     public function setComment(?string $comment): self
     {
         $this->comment = $comment;
+        return $this;
+    }
+
+    public function getUser(): User
+    {
+        return $this->user;
+    }
+
+    public function setUser(User | UserInterface $user): static
+    {
+        $this->user = $user;
+
         return $this;
     }
 }

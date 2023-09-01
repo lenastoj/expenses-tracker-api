@@ -1,0 +1,2 @@
+testiranje (integraciono kad testiram get, post blabla) i unit je ovo drugo
+*za kreiranje ekspensa u toj funkciji moram prvo da ulogujem korisnika pa onda da ubacim ekspens. Mogu neki mock da napravim. Inace bi se koristila test databaza i imala jednog usera sa kojim testiram i njegovim jwt tokenom
