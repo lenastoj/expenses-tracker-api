@@ -41,9 +41,6 @@ class AuthController extends AbstractController
             $errors['password'][] = 'Invalid credentials';
             return $this->json($errors, Response::HTTP_BAD_REQUEST);
         }
-//        if (!empty($errors)) {
-//            return $this->json($errors, Response::HTTP_BAD_REQUEST);
-//        }
 
         $token = $jwtManager->create($user);
         $cookie = new Cookie('jwt_token', $token, time() + 3600, '/', null, false, true);
@@ -67,7 +64,7 @@ class AuthController extends AbstractController
     public function logout(Request $request): JsonResponse
     {
         $response = new JsonResponse();
-        $response->headers->clearCookie('jwt_token', '/', null, false, true);
+        $response->headers->clearCookie('jwt_token');
         $responseData = [
             'message' => 'Logged out successfully'
         ];

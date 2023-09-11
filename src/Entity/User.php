@@ -109,7 +109,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function removeExpense(Expense $expense): static
     {
         if ($this->expenses->removeElement($expense)) {
-            // set the owning side to null (unless already changed)
             if ($expense->getUser() === $this) {
                 $expense->setUser(null);
             }

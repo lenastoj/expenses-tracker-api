@@ -4,7 +4,6 @@ namespace App\Repository;
 
 use App\Entity\Expense;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
-use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
@@ -28,20 +27,34 @@ class ExpenseRepository extends ServiceEntityRepository
         $this->getEntityManager()->flush();
     }
 
-    public function getAll(int $userId): array
-    {
-        return $this->createQueryBuilder('e')
-        ->where('e.user = :userId')
-        ->setParameter('userId', $userId)
-        ->getQuery()
-        ->getResult();
-    }
-
-    public function getExpensesQueryBuilderForUser($userId): QueryBuilder
-    {
-        return $this->createQueryBuilder('e')
+    public function getExpensesQueryBuilderForUser(
+        $userId,
+        $word,
+        $month,
+        $amount,
+        $date,
+        $result = false
+    ) {
+        $qb = $this->createQueryBuilder('e')
             ->where('e.user = :userId')
             ->setParameter('userId', $userId);
+        if ($word) {
+            $qb->andWhere('e.description LIKE :word OR e.comment LIKE :word')->setParameter('word', '%' . $word . '%');
+        }
+        if (!empty($month)) {
+//            $qb->andWhere('MONTH(e.date) = :month')->setParameter('month', $month);
+            $qb->andWhere($qb->expr()->in('MONTH(e.date)', $month));
+        }
+        if ($amount) {
+            $qb->orderBy('e.amount', $amount);
+        }
+        if ($date) {
+            $qb->orderBy('e.date', $date);
+        }
+        if ($result) {
+            return $qb->getQuery()->getResult();
+        }
+        return $qb;
     }
 
     public function delete(Expense $expense): void

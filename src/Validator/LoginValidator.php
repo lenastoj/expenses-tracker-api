@@ -9,14 +9,9 @@ use Symfony\Component\Validator\Constraints as Assert;
 class LoginValidator
 {
     private ValidatorInterface $validator;
-
-//    private UserRepository $userRepository;
-
-
     public function __construct(ValidatorInterface $validator)
     {
         $this->validator = $validator;
-//        $this->userRepository = $userRepository;
     }
 
     public function validate(array $data): array
@@ -36,12 +31,6 @@ class LoginValidator
         ]);
 
         $violations = $this->validator->validate($data, $constraints);
-
-//        $user = $this->userRepository->findOneBy(['email' => $data['email']]);
-//
-//        if (!$user || $user->getPassword() !== $data['password']) {
-//            $errors['password'] = ['message' => 'Invalid credentials'];
-//        }
 
         $errors = [];
         foreach ($violations as $violation) {

@@ -6,11 +6,8 @@ namespace App\Controller;
 
 use App\Factory\ExpenseFactory;
 use App\Repository\ExpenseRepository;
-use App\Service\PaginationService;
 use App\Utils\Pagination;
 use App\Validator\ExpenseValidator;
-use Doctrine\DBAL\Types\Type;
-use Doctrine\DBAL\Types\Types;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -90,7 +87,6 @@ class ExpenseController extends AbstractController
     #[Route('/api/expenses', methods: 'GET')]
     public function index(
         Request $request,
-        PaginationService $paginator
     ): JsonResponse {
         try {
             $page = (int)$request->query->get('page', 1);
@@ -101,13 +97,28 @@ class ExpenseController extends AbstractController
 
             $user = $this->getUser();
             $userId = $user->getId();
-            $query = $this->expenseRepository->getExpensesQueryBuilderForUser($userId);
+
+            $query = $this->expenseRepository->getExpensesQueryBuilderForUser(
+                $userId,
+                $request->query->get('word'),
+                $request->query->get('month'),
+                $request->query->get('amount'),
+                $request->query->get('date'),
+            );
             $expenses = $this->pagination->paginate($query, $page, $perPage);
 
             if (empty($expenses)) {
                 return $this->json(['message' => 'No expenses'], Response::HTTP_NOT_FOUND);
             }
-            $totalExpenses = count($this->expenseRepository->getAll($userId));
+
+            $totalExpenses = count($this->expenseRepository->getExpensesQueryBuilderForUser(
+                $userId,
+                $request->query->get('word'),
+                $request->query->get('month'),
+                $request->query->get('amount'),
+                $request->query->get('date'),
+                true,
+            ));
             $totalPages = ceil($totalExpenses / $perPage);
 
             $data = [];
