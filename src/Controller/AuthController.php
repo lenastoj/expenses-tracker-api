@@ -44,8 +44,10 @@ class AuthController extends AbstractController
 
         $token = $jwtManager->create($user);
         $cookie = new Cookie('jwt_token', $token, time() + 3600, '/', null, false, true);
+        $cookie2 = new Cookie('login', 'true', time() + 3600, '/', null, false, false);
         $response = new JsonResponse();
         $response->headers->setCookie($cookie);
+        $response->headers->setCookie($cookie2);
 
         $responseData = [
             'user' => [
@@ -65,6 +67,7 @@ class AuthController extends AbstractController
     {
         $response = new JsonResponse();
         $response->headers->clearCookie('jwt_token');
+        $response->headers->clearCookie('login');
         $responseData = [
             'message' => 'Logged out successfully'
         ];

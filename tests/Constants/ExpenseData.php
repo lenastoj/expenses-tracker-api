@@ -6,21 +6,85 @@ use Symfony\Component\HttpFoundation\Response;
 
 class ExpenseData
 {
+    public const PRINT_DATA = [
+        [
+            [
+                'sort' => 'amount',
+                'order' => 'desc',
+            ],
+            Response::HTTP_OK,
+        ],
+        [
+            [
+                'sort' => 'description',
+                'order' => 'asc',
+                'word' => 'ample',
+            ],
+            Response::HTTP_OK,
+        ],
+        [
+            [
+                'startDate' => '2023-08-01',
+                'endDate' => '2023-08-31',
+            ],
+            Response::HTTP_OK,
+        ],
+        [
+            [
+                'startDate' => '2023-09-01',
+                'endDate' => '2023-08-31',
+            ],
+            Response::HTTP_OK,
+        ],
+        [
+            [],
+            Response::HTTP_OK,
+        ],
+    ];
     public const SHOW_DATA = [
         [
             'page' => 1,
+            [
+                'sort' => 'amount',
+                'order' => 'desc',
+            ],
+            Response::HTTP_OK,
+        ],
+        [
+            'page' => 1,
+            [
+                'sort' => 'description',
+                'order' => 'asc',
+                'word' => 'ample',
+            ],
+            Response::HTTP_OK,
+        ],
+        [
+            'page' => 1,
+            [
+                'startDate' => '2023-08-01',
+                'endDate' => '2023-08-31',
+            ],
             Response::HTTP_OK,
         ],
         [
             'page' => 10,
+            [],
             Response::HTTP_NOT_FOUND,
             ['message' => 'No expenses'],
         ],
         [
             'page' => 2,
+            [],
             Response::HTTP_OK,
         ],
+        [
+            'page' => 50,
+            [],
+            Response::HTTP_NOT_FOUND,
+        ],
     ];
+
     public const SHOW_SINGLE_DATA = [
         [
             'id' => 5,
@@ -40,7 +104,7 @@ class ExpenseData
                 'time' => '10:00:00',
                 'description' => 'Update expense',
                 'amount' => 10,
-                'comment' => 'Update comment'
+                'comment' => 'Update comment',
             ],
             Response::HTTP_OK,
             ['message' => 'Expense updated successfully'],
@@ -52,7 +116,7 @@ class ExpenseData
                 'time' => '10:00:00',
                 'description' => 'Update expense',
                 'amount' => 10,
-                'comment' => 'Update comment'
+                'comment' => 'Update comment',
             ],
             Response::HTTP_NOT_FOUND,
             ['message' => 'Expense not found'],
@@ -63,9 +127,7 @@ class ExpenseData
         [
             'id' => 2,
             Response::HTTP_NOT_FOUND,
-            [
-                'message' => 'Expense not found'
-            ]
+            ['message' => 'Expense not found'],
         ],
         [
             'id' => 12,
@@ -79,7 +141,7 @@ class ExpenseData
                 'time' => '17:00:00',
                 'description' => 'Invalid date format',
                 'amount' => 50.00,
-                'comment' => 'Sample comment'
+                'comment' => 'Sample comment',
             ],
             Response::HTTP_BAD_REQUEST,
             [
@@ -92,7 +154,7 @@ class ExpenseData
                 'time' => '17:00:00',
                 'description' => 'i',
                 'amount' => 50.00,
-                'comment' => 'Sample comment'
+                'comment' => 'Sample comment',
             ],
             Response::HTTP_BAD_REQUEST,
             [
@@ -105,12 +167,12 @@ class ExpenseData
                 'time' => '17:00:00',
                 'description' => 'i',
                 'amount' => -50.00,
-                'comment' => ''
+                'comment' => '',
             ],
             Response::HTTP_BAD_REQUEST,
             [
                 'description' => ['Description cannot be less than 2 characters.'],
-                'amount' => ['Amount must be a positive number.']
+                'amount' => ['Amount must be a positive number.'],
             ],
         ],
         [
@@ -119,25 +181,25 @@ class ExpenseData
                 'time' => '17:00:',
                 'description' => 'description',
                 'amount' => 50.00,
-                'comment' => 'comment'
+                'comment' => 'comment',
             ],
             Response::HTTP_BAD_REQUEST,
             [
                 'time' => ['This value is not a valid time.'],
-            ]
+            ],
         ],
         [
             [
                 'date' => '2023-08-14',
                 'time' => '17:00:',
                 'description' => 'description',
-                'amount' => 50.00
+                'amount' => 50.00,
             ],
             Response::HTTP_BAD_REQUEST,
             [
                 'time' => ['This value is not a valid time.'],
                 'comment' => ['This field is missing.'],
-            ]
+            ],
         ],
         [
             [],
@@ -148,7 +210,7 @@ class ExpenseData
                 'description' => ['This field is missing.'],
                 'amount' => ['This field is missing.'],
                 'comment' => ['This field is missing.'],
-            ]
+            ],
         ],
         [
             [
@@ -156,12 +218,12 @@ class ExpenseData
                 'time' => '10:00:00',
                 'description' => 'Sample expense',
                 'amount' => 10,
-                'comment' => 'Sample comment'
+                'comment' => 'Sample comment',
             ],
             Response::HTTP_CREATED,
             [
-                'message' => 'Expense created successfully'
-            ]
+                'message' => 'Expense created successfully',
+            ],
         ],
     ];
 }

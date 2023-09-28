@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
-use App\Factory\ExpenseFactory;
+use App\Application\ExpenseCreateEditService;
+use App\Application\ExpensesPrintWeekService;
 use App\Repository\ExpenseRepository;
 use App\Utils\Pagination;
-use App\Validator\ExpenseValidator;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -17,39 +17,34 @@ use Symfony\Component\Routing\Annotation\Route;
 class ExpenseController extends AbstractController
 {
     private ExpenseRepository $expenseRepository;
-    private ExpenseFactory $expenseFactory;
     private Pagination $pagination;
+    private ExpensesPrintWeekService $expensesPrintWeekService;
 
     public function __construct(
         Pagination $pagination,
         ExpenseRepository $expenseRepository,
-        ExpenseFactory $expenseFactory
+        ExpensesPrintWeekService $expensesPrintWeekService
     ) {
         $this->expenseRepository = $expenseRepository;
-        $this->expenseFactory = $expenseFactory;
         $this->pagination = $pagination;
+        $this->expensesPrintWeekService = $expensesPrintWeekService;
     }
 
     #[Route('/api/expenses', methods: 'POST')]
     public function create(
         Request $request,
-        ExpenseValidator $expenseValidator,
+        ExpenseCreateEditService $expenseCreateEditService,
     ): JsonResponse {
         try {
-            $requestData = json_decode($request->getContent(), true);
-            $errors = $expenseValidator->validate($requestData);
-
-            if (!empty($errors)) {
-                return $this->json($errors, Response::HTTP_BAD_REQUEST);
-            }
-
             $user = $this->getUser();
-            $expense = $this->expenseFactory->createExpense($requestData, $user);
-            $this->expenseRepository->save($expense);
-
-            return $this->json(['message' => 'Expense created successfully'], Response::HTTP_CREATED);
+            $requestData = json_decode($request->getContent(), true);
+            $confirmation = $expenseCreateEditService->createExpense($requestData, $user);
+            if (!$confirmation) {
+                return $this->json(['message' => 'Expense created successfully'], Response::HTTP_CREATED);
+            }
+            return $this->json($confirmation, Response::HTTP_BAD_REQUEST);
         } catch (\Exception $e) {
-            return $this->json([$e->getMessage()], Response::HTTP_BAD_REQUEST);
+            return $this->json([$e->getMessage(), 'message' => 'ovo radi'], Response::HTTP_BAD_REQUEST);
         }
     }
 
@@ -57,32 +52,55 @@ class ExpenseController extends AbstractController
     public function update(
         int $id,
         Request $request,
-        ExpenseValidator $expenseValidator,
+        ExpenseCreateEditService $expenseCreateEditService,
     ): JsonResponse {
         try {
             $user = $this->getUser();
-            $expense = $this->expenseRepository->findOneBy(['id' => $id, 'user' => $user]);
-
-            if (!$expense) {
-                return $this->json(['message' => 'Expense not found'], Response::HTTP_NOT_FOUND);
-            }
-
             $requestData = json_decode($request->getContent(), true);
-            $errors = $expenseValidator->validate($requestData);
 
-            if (!empty($errors)) {
-                return $this->json($errors, Response::HTTP_BAD_REQUEST);
+            $confirmation = $expenseCreateEditService->updateExpense($id, $user, $requestData);
+            if (!$confirmation) {
+                return $this->json(['message' => 'Expense updated successfully'], Response::HTTP_CREATED);
             }
-
-            $user = $this->getUser();
-            $this->expenseFactory->updateExpense($expense, $requestData, $user);
-            $this->expenseRepository->save($expense);
-
-            return $this->json(['message' => 'Expense updated successfully'], Response::HTTP_OK);
+            return $this->json($confirmation, Response::HTTP_BAD_REQUEST);
         } catch (\Exception $e) {
             return $this->json([$e->getMessage()], Response::HTTP_BAD_REQUEST);
         }
     }
+
+    #[Route('/api/expenses/week', methods: 'GET')]
+    public function weekList(): JsonResponse
+    {
+        try {
+            $user = $this->getUser();
+            $userId = $user->getId();
+            $expenses = $this->expensesPrintWeekService->getWeekExpenses($userId);
+            return $this->json($expenses, Response::HTTP_OK);
+        } catch (\Exception $e) {
+            return $this->json([$e->getMessage()], Response::HTTP_BAD_REQUEST);
+        }
+    }
+
+    #[Route('/api/expenses/print', methods: 'GET')]
+    public function printList(Request $request,): JsonResponse
+    {
+        try {
+            $user = $this->getUser();
+            $userId = $user->getId();
+            $expenses = $this->expensesPrintWeekService->getExpensesForPrint(
+                $userId,
+                $request->query->get('word'),
+                $request->query->get('sort'),
+                $request->query->get('order'),
+                $request->query->get('startDate'),
+                $request->query->get('endDate'),
+            );
+            return $this->json($expenses, Response::HTTP_OK);
+        } catch (\Exception $e) {
+            return $this->json([$e->getMessage()], Response::HTTP_BAD_REQUEST);
+        }
+    }
+
 
     #[Route('/api/expenses', methods: 'GET')]
     public function index(
@@ -93,7 +111,7 @@ class ExpenseController extends AbstractController
             if ($page < 1) {
                 $page = 1;
             }
-            $perPage = 5; // Expenses per page
+            $perPage = 5;
 
             $user = $this->getUser();
             $userId = $user->getId();
@@ -102,24 +120,31 @@ class ExpenseController extends AbstractController
                 $userId,
                 $request->query->get('word'),
                 $request->query->get('month'),
-                $request->query->get('amount'),
-                $request->query->get('date'),
+                $request->query->get('sort'),
+                $request->query->get('order'),
+                $request->query->get('startDate'),
+                $request->query->get('endDate'),
             );
+
             $expenses = $this->pagination->paginate($query, $page, $perPage);
 
             if (empty($expenses)) {
                 return $this->json(['message' => 'No expenses'], Response::HTTP_NOT_FOUND);
             }
 
-            $totalExpenses = count($this->expenseRepository->getExpensesQueryBuilderForUser(
+            $totalExpenses = $this->expenseRepository->getExpensesQueryBuilderForUser(
                 $userId,
                 $request->query->get('word'),
                 $request->query->get('month'),
-                $request->query->get('amount'),
-                $request->query->get('date'),
+                $request->query->get('sort'),
+                $request->query->get('order'),
+                $request->query->get('startDate'),
+                $request->query->get('endDate'),
                 true,
-            ));
-            $totalPages = ceil($totalExpenses / $perPage);
+            );
+
+            $totalExpensesCount = count($totalExpenses);
+            $totalPages = ceil($totalExpensesCount / $perPage);
 
             $data = [];
             foreach ($expenses as $expense) {
@@ -132,14 +157,14 @@ class ExpenseController extends AbstractController
                     'comment' => $expense->getComment(),
                 ];
             }
+
             $metadata = [
                 'page' => $page,
                 'paginationLimit' => $perPage,
                 'count' => count($data),
-                'total' => $totalExpenses,
+                'total' => $totalExpensesCount,
                 'totalPages' => $totalPages,
             ];
-
             $response = [
                 'data' => $data,
                 'metadata' => $metadata,
@@ -150,8 +175,7 @@ class ExpenseController extends AbstractController
         }
     }
 
-    #[
-        Route('/api/expenses/{id}', methods: 'GET')]
+    #[Route('/api/expenses/{id}', methods: 'GET')]
     public function show(int $id): JsonResponse
     {
         try {

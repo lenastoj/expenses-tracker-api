@@ -142,15 +142,22 @@ class ExpenseControllerTest extends WebTestCase
      */
     public function testShowExpenses(
         $page,
+        $params,
         $expectedStatusCode,
         $expectedErrorMessage = null
     ): void {
         $testUser = $this->userRepository->findOneBy(['email' => 'pera@mail.com']);
         $this->client->loginUser($testUser);
 
+        $filters = "?page=$page";
+        foreach ($params as $key => $value) {
+            $filters = $filters . "&$key=$value";
+        }
+
+        dump($filters);
         $this->client->request(
             'GET',
-            '/api/expenses?page=' . $page,
+            '/api/expenses' . $filters,
         );
         $response = $this->client->getResponse();
         $this->responseCheck($response, $expectedStatusCode, $expectedErrorMessage);
@@ -159,5 +166,40 @@ class ExpenseControllerTest extends WebTestCase
     public function provideShowExpensesData(): array
     {
         return ExpenseData::SHOW_DATA;
+    }
+
+
+    /**
+     * @dataProvider providePrintExpensesData
+     */
+    public function testPrintExpenses(
+        $params,
+        $expectedStatusCode,
+        $expectedErrorMessage = null
+    ): void {
+        $testUser = $this->userRepository->findOneBy(['email' => 'pera@mail.com']);
+        $this->client->loginUser($testUser);
+
+        $filters = "?";
+        foreach ($params as $key => $value) {
+            if (array_key_first($params) === $key) {
+                $filters = $filters . "$key=$value";
+            } else {
+                $filters = $filters . "&$key=$value";
+            }
+        }
+
+        dump($filters);
+        $this->client->request(
+            'GET',
+            '/api/expenses/print' . $filters,
+        );
+        $response = $this->client->getResponse();
+        $this->responseCheck($response, $expectedStatusCode, $expectedErrorMessage);
+    }
+
+    public function providePrintExpensesData(): array
+    {
+        return ExpenseData::PRINT_DATA;
     }
 }

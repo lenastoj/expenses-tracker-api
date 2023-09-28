@@ -27,29 +27,74 @@ class ExpenseRepository extends ServiceEntityRepository
         $this->getEntityManager()->flush();
     }
 
+    public function getPrintExpensesQueryBuilder(
+        $userId,
+        $word,
+        $sort,
+        $order,
+        $startDate,
+        $endDate,
+    ) {
+        $qb = $this->createQueryBuilder('e')
+            ->select('e.id', 'e.date', 'e.time', 'e.amount', 'e.description', 'e.comment')
+            ->where('e.user = :userId')
+            ->setParameter('userId', $userId);
+        if ($startDate && $endDate) {
+            $qb->andWhere('e.date BETWEEN :startDate AND :endDate')
+                ->setParameter('startDate', $startDate)
+                ->setParameter('endDate', $endDate);
+        }
+        if ($word) {
+            $qb->andWhere('e.description LIKE :word OR e.comment LIKE :word')->setParameter('word', '%' . $word . '%');
+        }
+
+        if ($sort && $order) {
+            $qb->orderBy("e.$sort", $order);
+        }
+        return $qb->getQuery()->getResult();
+    }
+
+    public function getWeekExpensesQueryBuilder($startDate, $endDate, $userId)
+    {
+        $qb = $this->createQueryBuilder('e')
+            ->select('e.id', 'e.date', 'e.time', 'e.amount', 'e.description', 'e.comment')
+            ->where('e.user = :userId')
+            ->andWhere('e.date BETWEEN :startDate AND :endDate')
+            ->setParameter('userId', $userId)
+            ->setParameter('startDate', $startDate)
+            ->setParameter('endDate', $endDate)
+            ->orderBy('e.date', 'asc')
+            ->addOrderBy('e.time', 'asc');
+
+        return $qb->getQuery()->getResult();
+    }
+
     public function getExpensesQueryBuilderForUser(
         $userId,
         $word,
         $month,
-        $amount,
-        $date,
+        $sort,
+        $order,
+        $startDate,
+        $endDate,
         $result = false
     ) {
         $qb = $this->createQueryBuilder('e')
             ->where('e.user = :userId')
             ->setParameter('userId', $userId);
+        if ($startDate && $endDate) {
+            $qb->andWhere('e.date BETWEEN :startDate AND :endDate')
+                ->setParameter('startDate', $startDate)
+                ->setParameter('endDate', $endDate);
+        }
         if ($word) {
             $qb->andWhere('e.description LIKE :word OR e.comment LIKE :word')->setParameter('word', '%' . $word . '%');
         }
         if (!empty($month)) {
-//            $qb->andWhere('MONTH(e.date) = :month')->setParameter('month', $month);
             $qb->andWhere($qb->expr()->in('MONTH(e.date)', $month));
         }
-        if ($amount) {
-            $qb->orderBy('e.amount', $amount);
-        }
-        if ($date) {
-            $qb->orderBy('e.date', $date);
+        if ($sort && $order) {
+            $qb->orderBy("e.$sort", $order);
         }
         if ($result) {
             return $qb->getQuery()->getResult();
