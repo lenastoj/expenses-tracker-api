@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Dto\User\UserDto;
 use App\Repository\UserRepository;
 use App\Validator\LoginValidator;
 use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
@@ -79,11 +80,15 @@ class AuthController extends AbstractController
     #[Route('/api/auth', methods: 'GET')]
     public function activeUser(): JsonResponse
     {
-        $user = $this->getUser();
+        $hostUser = $this->userRepository->find($this->getUser());
+        $guests = $hostUser->getHosts()->getValues();
+        $filteredGuests = array_map(function ($user) {
+            return UserDto::createFromEntity($user);
+        }, $guests);
+
         $userData = [
-            'id' => $user->getId(),
-            'firstName' => $user->getFirstName(),
-            'lastName' => $user->getLastName(),
+            'user' => UserDto::createFromEntity($hostUser),
+            'guests' => $filteredGuests,
         ];
 
         return $this->json($userData, Response::HTTP_OK);

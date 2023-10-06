@@ -2,35 +2,46 @@
 
 namespace App\Application;
 
-use App\Dto\ExpenseDTO;
-use App\Dto\WeekExpenseDTO;
+use App\Dto\Expense\ExpenseDTO;
+use App\Dto\Expense\WeekExpenseDTO;
 use App\Repository\ExpenseRepository;
+use App\Repository\UserRepository;
 
 class ExpensesPrintWeekService
 {
     private ExpenseRepository $expenseRepository;
+    private UserRepository $userRepository;
 
     public function __construct(
         ExpenseRepository $expenseRepository,
+        UserRepository $userRepository,
     ) {
         $this->expenseRepository = $expenseRepository;
+        $this->userRepository = $userRepository;
     }
 
     public function getExpensesForPrint(
         $userId,
+        $id,
         $word,
         $sort,
         $order,
         $startDate,
         $endDate
     ): WeekExpenseDTO {
-        $expensesData = $this->expenseRepository->getPrintExpensesQueryBuilder(
-            $userId,
+
+        $hostUser = $this->userRepository->findOneBy(['id' => $userId]);
+        $maybeGuestUser = $this->userRepository->findOneBy(['id' => $id]);
+        $guestUser = $hostUser->getGuests()->contains($maybeGuestUser);
+
+        $expensesData = $this->expenseRepository->getExpensesQueryBuilderForUser(
+            $guestUser ? $id : $userId,
             $word,
             $sort,
             $order,
             $startDate,
             $endDate,
+            true
         );
         $expenses = [];
         $amount = 0;
@@ -54,8 +65,12 @@ class ExpensesPrintWeekService
         );
     }
 
-    public function getWeekExpenses(int $userId): WeekExpenseDTO
+    public function getWeekExpenses(int $userId, $id): WeekExpenseDTO
     {
+        $hostUser = $this->userRepository->findOneBy(['id' => $userId]);
+        $maybeGuestUser = $this->userRepository->findOneBy(['id' => $id]);
+        $guestUser = $hostUser->getGuests()->contains($maybeGuestUser);
+
         $current = date("l");
         $startOfWeek = date("Y-m-d", strtotime('monday this week'));
         $endOfWeekWithToday = date("Y-m-d", strtotime("$current this week"));
@@ -63,7 +78,7 @@ class ExpensesPrintWeekService
         $expensesData = $this->expenseRepository->getWeekExpensesQueryBuilder(
             $startOfWeek,
             $endOfWeekWithToday,
-            $userId
+            $guestUser ? $id : $userId,
         );
         $expenses = [];
         $amount = 0;

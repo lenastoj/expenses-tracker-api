@@ -8,6 +8,10 @@ use App\Repository\UserRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Doctrine\ORM\Mapping\InverseJoinColumn;
+use Doctrine\ORM\Mapping\JoinColumn;
+use Doctrine\ORM\Mapping\JoinTable;
+use Doctrine\ORM\Mapping\ManyToMany;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 
@@ -34,9 +38,48 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\OneToMany(mappedBy: 'user', targetEntity: Expense::class)]
     private Collection $expenses;
 
+    #[ORM\ManyToMany(targetEntity: User::class, mappedBy: 'myGuests')]
+    private Collection $myHosts;
+
+    #[JoinTable(name: 'guests')]
+    #[JoinColumn(name: 'user_id', referencedColumnName: 'id')]
+    #[InverseJoinColumn(name: 'guest_user_id', referencedColumnName: 'id')]
+    #[ManyToMany(targetEntity: 'User', inversedBy: 'myHosts')]
+    private Collection $myGuests;
+
     public function __construct()
     {
         $this->expenses = new ArrayCollection();
+        $this->myHosts = new ArrayCollection();
+        $this->myGuests = new ArrayCollection();
+    }
+
+    public function getGuests(): Collection
+    {
+        return $this->myGuests;
+    }
+
+    public function addGuest(User $guest): bool
+    {
+        if (!$this->myGuests->contains($guest)) {
+            $this->myGuests->add($guest);
+            return true;
+        }
+        return false;
+    }
+
+    public function removeGuest(User $guest): bool
+    {
+        if ($this->myGuests->contains($guest)) {
+            $this->myGuests->removeElement($guest);
+            return true;
+        }
+        return false;
+    }
+
+    public function getHosts(): Collection
+    {
+        return $this->myHosts;
     }
 
     public function getId(): int
@@ -49,8 +92,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this->firstName;
     }
 
-    public function setFirstName(string $firstName): self
-    {
+    public function setFirstName(
+        string $firstName
+    ): self {
         $this->firstName = $firstName;
         return $this;
     }
@@ -60,8 +104,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this->lastName;
     }
 
-    public function setLastName(string $lastName): self
-    {
+    public function setLastName(
+        string $lastName
+    ): self {
         $this->lastName = $lastName;
         return $this;
     }
@@ -71,8 +116,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this->password;
     }
 
-    public function setPassword(string $password): self
-    {
+    public function setPassword(
+        string $password
+    ): self {
         $this->password = $password;
         return $this;
     }
@@ -82,8 +128,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this->email;
     }
 
-    public function setEmail(string $email): self
-    {
+    public function setEmail(
+        string $email
+    ): self {
         $this->email = $email;
         return $this;
     }
@@ -96,8 +143,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this->expenses;
     }
 
-    public function addExpense(Expense $expense): static
-    {
+    public function addExpense(
+        Expense $expense
+    ): static {
         if (!$this->expenses->contains($expense)) {
             $this->expenses->add($expense);
             $expense->setUser($this);
@@ -106,8 +154,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    public function removeExpense(Expense $expense): static
-    {
+    public function removeExpense(
+        Expense $expense
+    ): static {
         if ($this->expenses->removeElement($expense)) {
             if ($expense->getUser() === $this) {
                 $expense->setUser(null);
@@ -136,4 +185,5 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     {
         return $this->email;
     }
+
 }

@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Application\ExpenseCreateEditService;
+use App\Application\ExpensesIndexService;
 use App\Application\ExpensesPrintWeekService;
 use App\Repository\ExpenseRepository;
-use App\Utils\Pagination;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -17,16 +17,13 @@ use Symfony\Component\Routing\Annotation\Route;
 class ExpenseController extends AbstractController
 {
     private ExpenseRepository $expenseRepository;
-    private Pagination $pagination;
     private ExpensesPrintWeekService $expensesPrintWeekService;
 
     public function __construct(
-        Pagination $pagination,
         ExpenseRepository $expenseRepository,
         ExpensesPrintWeekService $expensesPrintWeekService
     ) {
         $this->expenseRepository = $expenseRepository;
-        $this->pagination = $pagination;
         $this->expensesPrintWeekService = $expensesPrintWeekService;
     }
 
@@ -44,7 +41,7 @@ class ExpenseController extends AbstractController
             }
             return $this->json($confirmation, Response::HTTP_BAD_REQUEST);
         } catch (\Exception $e) {
-            return $this->json([$e->getMessage(), 'message' => 'ovo radi'], Response::HTTP_BAD_REQUEST);
+            return $this->json([$e->getMessage()], Response::HTTP_BAD_REQUEST);
         }
     }
 
@@ -69,12 +66,14 @@ class ExpenseController extends AbstractController
     }
 
     #[Route('/api/expenses/week', methods: 'GET')]
-    public function weekList(): JsonResponse
+    public function weekList(Request $request): JsonResponse
     {
         try {
             $user = $this->getUser();
             $userId = $user->getId();
-            $expenses = $this->expensesPrintWeekService->getWeekExpenses($userId);
+            $id = (int)$request->query->get('id');
+
+            $expenses = $this->expensesPrintWeekService->getWeekExpenses($userId, $id);
             return $this->json($expenses, Response::HTTP_OK);
         } catch (\Exception $e) {
             return $this->json([$e->getMessage()], Response::HTTP_BAD_REQUEST);
@@ -82,13 +81,16 @@ class ExpenseController extends AbstractController
     }
 
     #[Route('/api/expenses/print', methods: 'GET')]
-    public function printList(Request $request,): JsonResponse
+    public function printList(Request $request): JsonResponse
     {
         try {
             $user = $this->getUser();
             $userId = $user->getId();
+
+            $id = (int)$request->query->get('id');
             $expenses = $this->expensesPrintWeekService->getExpensesForPrint(
                 $userId,
+                $id,
                 $request->query->get('word'),
                 $request->query->get('sort'),
                 $request->query->get('order'),
@@ -105,70 +107,25 @@ class ExpenseController extends AbstractController
     #[Route('/api/expenses', methods: 'GET')]
     public function index(
         Request $request,
+        ExpensesIndexService $expensesIndexService,
     ): JsonResponse {
         try {
-            $page = (int)$request->query->get('page', 1);
-            if ($page < 1) {
-                $page = 1;
-            }
-            $perPage = 5;
-
             $user = $this->getUser();
             $userId = $user->getId();
 
-            $query = $this->expenseRepository->getExpensesQueryBuilderForUser(
+            $page = (int)$request->query->get('page', 1);
+            $id = (int)$request->query->get('id');
+
+            $response = $expensesIndexService->getExpenses(
+                $page,
                 $userId,
+                $id,
                 $request->query->get('word'),
-                $request->query->get('month'),
                 $request->query->get('sort'),
                 $request->query->get('order'),
                 $request->query->get('startDate'),
-                $request->query->get('endDate'),
+                $request->query->get('endDate')
             );
-
-            $expenses = $this->pagination->paginate($query, $page, $perPage);
-
-            if (empty($expenses)) {
-                return $this->json(['message' => 'No expenses'], Response::HTTP_NOT_FOUND);
-            }
-
-            $totalExpenses = $this->expenseRepository->getExpensesQueryBuilderForUser(
-                $userId,
-                $request->query->get('word'),
-                $request->query->get('month'),
-                $request->query->get('sort'),
-                $request->query->get('order'),
-                $request->query->get('startDate'),
-                $request->query->get('endDate'),
-                true,
-            );
-
-            $totalExpensesCount = count($totalExpenses);
-            $totalPages = ceil($totalExpensesCount / $perPage);
-
-            $data = [];
-            foreach ($expenses as $expense) {
-                $data[] = [
-                    'id' => $expense->getId(),
-                    'date' => $expense->getDate(),
-                    'time' => $expense->getTime(),
-                    'description' => $expense->getDescription(),
-                    'amount' => $expense->getAmount() / 100,
-                    'comment' => $expense->getComment(),
-                ];
-            }
-
-            $metadata = [
-                'page' => $page,
-                'paginationLimit' => $perPage,
-                'count' => count($data),
-                'total' => $totalExpensesCount,
-                'totalPages' => $totalPages,
-            ];
-            $response = [
-                'data' => $data,
-                'metadata' => $metadata,
-            ];
             return $this->json($response, Response::HTTP_OK);
         } catch (\Exception $e) {
             return $this->json([$e->getMessage()], Response::HTTP_NOT_FOUND);
