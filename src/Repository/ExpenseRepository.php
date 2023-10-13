@@ -27,74 +27,48 @@ class ExpenseRepository extends ServiceEntityRepository
         $this->getEntityManager()->flush();
     }
 
-    public function getWeekExpensesQueryBuilder($startDate, $endDate, $userId)
-    {
-        $qb = $this->createQueryBuilder('e')
-            ->select('e.id', 'e.date', 'e.time', 'e.amount', 'e.description', 'e.comment')
-            ->where('e.user = :userId')
-            ->andWhere('e.date BETWEEN :startDate AND :endDate')
-            ->setParameter('userId', $userId)
-            ->setParameter('startDate', $startDate)
-            ->setParameter('endDate', $endDate)
-            ->orderBy('e.date', 'asc')
-            ->addOrderBy('e.time', 'asc');
-
-        return $qb->getQuery()->getResult();
-    }
-
-//    public function getPrintExpensesQueryBuilder(
-//        $userId,
-//        $word,
-//        $sort,
-//        $order,
-//        $startDate,
-//        $endDate,
-//    ) {
+//    public function getWeekExpensesQueryBuilder(int $userId, string $startDate, string $endDate)
+//    {
 //        $qb = $this->createQueryBuilder('e')
 //            ->select('e.id', 'e.date', 'e.time', 'e.amount', 'e.description', 'e.comment')
 //            ->where('e.user = :userId')
-//            ->setParameter('userId', $userId);
-//        if ($startDate && $endDate) {
-//            $qb->andWhere('e.date BETWEEN :startDate AND :endDate')
-//                ->setParameter('startDate', $startDate)
-//                ->setParameter('endDate', $endDate);
-//        }
-//        if ($word) {
-//            $qb->andWhere('e.description LIKE :word OR e.comment LIKE :word')->setParameter('word', '%' . $word . '%');
-//        }
+//            ->andWhere('e.date BETWEEN :startDate AND :endDate')
+//            ->setParameter('userId', $userId)
+//            ->setParameter('startDate', $startDate)
+//            ->setParameter('endDate', $endDate)
+//            ->orderBy('e.date', 'asc')
+//            ->addOrderBy('e.time', 'asc');
 //
-//        if ($sort && $order) {
-//            $qb->orderBy("e.$sort", $order);
-//        }
 //        return $qb->getQuery()->getResult();
 //    }
 
-    public function getExpensesQueryBuilderForUser(
-        $userId,
-        $word,
-        $sort,
-        $order,
-        $startDate,
-        $endDate,
-        $result = false,
+    public function getExpenses(
+        int $userId,
+        bool $result,
+        string | null $startDate = null,
+        string | null $endDate = null,
+        string | null $searchQuery = null,
+        string | null $sort = null,
+        string | null $sortDirection = null,
     ) {
         $qb = $this->createQueryBuilder('e')
             ->select('e.id', 'e.date', 'e.time', 'e.amount', 'e.description', 'e.comment')
             ->where('e.user = :userId')
             ->setParameter('userId', $userId);
-//        $qb = $this->createQueryBuilder('e')
-//            ->where('e.user = :userId')
-//            ->setParameter('userId', $userId);
+
         if ($startDate && $endDate) {
             $qb->andWhere('e.date BETWEEN :startDate AND :endDate')
                 ->setParameter('startDate', $startDate)
                 ->setParameter('endDate', $endDate);
         }
-        if ($word) {
-            $qb->andWhere('e.description LIKE :word OR e.comment LIKE :word')->setParameter('word', '%' . $word . '%');
+        if ($searchQuery) {
+            $qb->andWhere('e.description LIKE :searchQuery OR e.comment LIKE :searchQuery')->setParameter(
+                'searchQuery',
+                '%' . $searchQuery . '%'
+            );
         }
-        if ($sort && $order) {
-            $qb->orderBy("e.$sort", $order);
+        if ($sort && $sortDirection) {
+            $qb->orderBy("e.$sort", $sortDirection);
         }
         if ($result) {
             return $qb->getQuery()->getResult();

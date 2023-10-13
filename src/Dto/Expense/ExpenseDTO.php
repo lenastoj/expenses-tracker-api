@@ -2,21 +2,23 @@
 
 namespace App\Dto\Expense;
 
+use App\Entity\Expense;
+
 class ExpenseDTO
 {
     private int $id;
-    private \DateTimeInterface $date;
-    private ?\DateTimeInterface $time = null;
+    private \DateTimeInterface | string $date;
+    private \DateTimeInterface | string | null $time = null;
     private string $description;
     private float $amount;
     private ?string $comment = null;
 
     public function __construct(
         int $id,
-        \DateTimeInterface $date,
+        \DateTimeInterface | string $date,
         string $description,
         float $amount,
-        \DateTimeInterface $time = null,
+        \DateTimeInterface | string | null $time = null,
         string $comment = null,
     ) {
         $this->id = $id;
@@ -34,11 +36,17 @@ class ExpenseDTO
 
     public function getDate(): string
     {
+        if (is_string($this->date)) {
+            return $this->date;
+        }
         return $this->date->format('Y-m-d');
     }
 
     public function getTime(): ?string
     {
+        if (is_string($this->time)) {
+            return $this->time;
+        }
         return $this->time?->format('H:i:s');
     }
 
@@ -66,6 +74,17 @@ class ExpenseDTO
             $expense['amount'],
             $expense['time'],
             $expense['comment'],
+        );
+    }
+    public static function createFromEntity(Expense $expense): self
+    {
+        return new self(
+            $expense->getId(),
+            $expense->getDate(),
+            $expense->getDescription(),
+            $expense->getAmount(),
+            $expense->getTime(),
+            $expense->getComment(),
         );
     }
 }

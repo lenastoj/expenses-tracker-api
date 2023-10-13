@@ -2,17 +2,17 @@
 
 namespace App\Controller;
 
-use App\Dto\User\UserDto;
+use App\Application\User\ActiveUserService;
 use App\Repository\UserRepository;
 use App\Validator\LoginValidator;
 use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Cookie;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpFoundation\Cookie;
 
 class AuthController extends AbstractController
 {
@@ -78,19 +78,31 @@ class AuthController extends AbstractController
     }
 
     #[Route('/api/auth', methods: 'GET')]
-    public function activeUser(): JsonResponse
+    public function activeUser(ActiveUserService $activeUserService): JsonResponse
     {
-        $hostUser = $this->userRepository->find($this->getUser());
-        $guests = $hostUser->getHosts()->getValues();
-        $filteredGuests = array_map(function ($user) {
-            return UserDto::createFromEntity($user);
-        }, $guests);
-
-        $userData = [
-            'user' => UserDto::createFromEntity($hostUser),
-            'guests' => $filteredGuests,
-        ];
-
-        return $this->json($userData, Response::HTTP_OK);
+        try {
+            $userId = $this->getUser()->getId();
+            $response = $activeUserService->getActiveUser($userId);
+            return $this->json($response, Response::HTTP_OK);
+        } catch (\Exception $e) {
+            return $this->json([$e->getMessage()], Response::HTTP_BAD_REQUEST);
+        }
     }
 }
+//
+///**
+// * @return array{user: UserDto, hosts: UserDto[]}
+// */
+//public function getActiveUser(int $userId): array
+//{
+//    $hostUser = $this->userRepository->findOneBy(['id' => $userId]);
+//    $hosts = $hostUser->getHosts()->getValues();
+//    $filteredHosts = array_map(function ($user) {
+//        return UserDto::createFromEntity($user);
+//    }, $hosts);
+//
+//    return [
+//        'user' => UserDto::createFromEntity($hostUser),
+//        'hosts' => $filteredHosts,
+//    ];
+//}

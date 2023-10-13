@@ -8,7 +8,7 @@ use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\HttpFoundation\Response;
 
-class   AuthControllerTest extends WebTestCase
+class AuthControllerTest extends WebTestCase
 {
     private KernelBrowser $client;
     private UserRepository|null $userRepository;
@@ -79,6 +79,7 @@ class   AuthControllerTest extends WebTestCase
         $response = $this->client->getResponse();
         $statusCode = $response->getStatusCode();
 
+        dump($response);
         $this->assertEquals(Response::HTTP_OK, $statusCode);
     }
 }

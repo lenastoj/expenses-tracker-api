@@ -3,12 +3,12 @@
 namespace App\Factory;
 
 use App\Entity\Expense;
+use App\Entity\User;
 use DateTime;
-use Symfony\Component\Security\Core\User\UserInterface;
 
 class ExpenseFactory
 {
-    private function setExpenseProperties(Expense $expense, array $requestData, UserInterface $user): void
+    private function setExpenseProperties(Expense $expense, array $requestData, User $user): void
     {
         $expense
             ->setDate(new DateTime($requestData['date']))
@@ -19,7 +19,7 @@ class ExpenseFactory
             ->setUser($user);
     }
 
-    public function createExpense(array $requestData, UserInterface $user): Expense
+    public function createExpense(array $requestData, User $user): Expense
     {
         $expense = new Expense();
         $this->setExpenseProperties($expense, $requestData, $user);
@@ -27,7 +27,7 @@ class ExpenseFactory
         return $expense;
     }
 
-    public function updateExpense(Expense $expense, array $requestData, UserInterface $user): void
+    public function updateExpense(Expense $expense, array $requestData, User $user): void
     {
         $this->setExpenseProperties($expense, $requestData, $user);
     }

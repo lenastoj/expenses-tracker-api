@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
-use App\Application\ExpenseCreateEditService;
-use App\Application\ExpensesIndexService;
-use App\Application\ExpensesPrintWeekService;
-use App\Repository\ExpenseRepository;
+use App\Application\Expense\ExpenseCreateEditService;
+use App\Application\Expense\ExpenseDeleteService;
+use App\Application\Expense\ExpenseShowService;
+use App\Application\Expense\ExpensesIndexService;
+use App\Application\Expense\ExpensesPrintWeekService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -16,26 +17,25 @@ use Symfony\Component\Routing\Annotation\Route;
 
 class ExpenseController extends AbstractController
 {
-    private ExpenseRepository $expenseRepository;
+    private ExpenseCreateEditService $expenseCreateEditService;
     private ExpensesPrintWeekService $expensesPrintWeekService;
 
     public function __construct(
-        ExpenseRepository $expenseRepository,
+        ExpenseCreateEditService $expenseCreateEditService,
         ExpensesPrintWeekService $expensesPrintWeekService
     ) {
-        $this->expenseRepository = $expenseRepository;
+        $this->expenseCreateEditService = $expenseCreateEditService;
         $this->expensesPrintWeekService = $expensesPrintWeekService;
     }
 
     #[Route('/api/expenses', methods: 'POST')]
     public function create(
-        Request $request,
-        ExpenseCreateEditService $expenseCreateEditService,
+        Request $request
     ): JsonResponse {
         try {
-            $user = $this->getUser();
+            $userId = $this->getUser()->getId();
             $requestData = json_decode($request->getContent(), true);
-            $confirmation = $expenseCreateEditService->createExpense($requestData, $user);
+            $confirmation = $this->expenseCreateEditService->createExpense($userId, $requestData);
             if (!$confirmation) {
                 return $this->json(['message' => 'Expense created successfully'], Response::HTTP_CREATED);
             }
@@ -49,13 +49,12 @@ class ExpenseController extends AbstractController
     public function update(
         int $id,
         Request $request,
-        ExpenseCreateEditService $expenseCreateEditService,
     ): JsonResponse {
         try {
-            $user = $this->getUser();
+            $userId = $this->getUser()->getId();
             $requestData = json_decode($request->getContent(), true);
 
-            $confirmation = $expenseCreateEditService->updateExpense($id, $user, $requestData);
+            $confirmation = $this->expenseCreateEditService->updateExpense($userId, $id, $requestData);
             if (!$confirmation) {
                 return $this->json(['message' => 'Expense updated successfully'], Response::HTTP_CREATED);
             }
@@ -65,33 +64,22 @@ class ExpenseController extends AbstractController
         }
     }
 
-    #[Route('/api/expenses/week', methods: 'GET')]
-    public function weekList(Request $request): JsonResponse
-    {
-        try {
-            $user = $this->getUser();
-            $userId = $user->getId();
-            $id = (int)$request->query->get('id');
-
-            $expenses = $this->expensesPrintWeekService->getWeekExpenses($userId, $id);
-            return $this->json($expenses, Response::HTTP_OK);
-        } catch (\Exception $e) {
-            return $this->json([$e->getMessage()], Response::HTTP_BAD_REQUEST);
-        }
-    }
-
     #[Route('/api/expenses/print', methods: 'GET')]
     public function printList(Request $request): JsonResponse
     {
         try {
-            $user = $this->getUser();
-            $userId = $user->getId();
-
+            $userId = $this->getUser()->getId();
             $id = (int)$request->query->get('id');
+            $weekExpenses = $request->query->get('week');
+            if ($weekExpenses === 'true') {
+                $expenses = $this->expensesPrintWeekService->getExpensesForPrint($userId, $id, true);
+                return $this->json($expenses, Response::HTTP_OK);
+            }
             $expenses = $this->expensesPrintWeekService->getExpensesForPrint(
                 $userId,
                 $id,
-                $request->query->get('word'),
+                false,
+                $request->query->get('searchQuery'),
                 $request->query->get('sort'),
                 $request->query->get('order'),
                 $request->query->get('startDate'),
@@ -110,21 +98,19 @@ class ExpenseController extends AbstractController
         ExpensesIndexService $expensesIndexService,
     ): JsonResponse {
         try {
-            $user = $this->getUser();
-            $userId = $user->getId();
-
+            $userId = $this->getUser()->getId();
             $page = (int)$request->query->get('page', 1);
             $id = (int)$request->query->get('id');
 
             $response = $expensesIndexService->getExpenses(
-                $page,
                 $userId,
                 $id,
-                $request->query->get('word'),
+                $request->query->get('searchQuery'),
                 $request->query->get('sort'),
                 $request->query->get('order'),
                 $request->query->get('startDate'),
-                $request->query->get('endDate')
+                $request->query->get('endDate'),
+                $page,
             );
             return $this->json($response, Response::HTTP_OK);
         } catch (\Exception $e) {
@@ -133,44 +119,29 @@ class ExpenseController extends AbstractController
     }
 
     #[Route('/api/expenses/{id}', methods: 'GET')]
-    public function show(int $id): JsonResponse
+    public function show(int $id, ExpenseShowService $expenseShowService): JsonResponse
     {
         try {
-            $user = $this->getUser();
-            $expense = $this->expenseRepository->findOneBy(['id' => $id, 'user' => $user]);
-
-            if (!$expense) {
+            $userId = $this->getUser()->getId();
+            $response = $expenseShowService->showExpense($userId, $id);
+            if (!$response) {
                 return $this->json(['message' => 'Expense not found'], Response::HTTP_NOT_FOUND);
             }
-
-            $data = [
-                'id' => $expense->getId(),
-                'date' => $expense->getDate(),
-                'time' => $expense->getTime(),
-                'description' => $expense->getDescription(),
-                'amount' => $expense->getAmount() / 100,
-                'comment' => $expense->getComment(),
-            ];
-
-            return $this->json($data, Response::HTTP_OK);
+            return $this->json($response, Response::HTTP_OK);
         } catch (\Exception $e) {
             return $this->json([$e->getMessage()], Response::HTTP_BAD_REQUEST);
         }
     }
 
     #[Route('/api/expenses/{id}', methods: 'DELETE')]
-    public function delete(int $id): JsonResponse
+    public function delete(int $id, ExpenseDeleteService $expenseDeleteService): JsonResponse
     {
         try {
-            $user = $this->getUser();
-            $expense = $this->expenseRepository->findOneBy(['id' => $id, 'user' => $user]);
-
-            if (!$expense) {
+            $userId = $this->getUser()->getId();
+            $response = $expenseDeleteService->deleteExpense($userId, $id);
+            if (!$response) {
                 return $this->json(['message' => 'Expense not found'], Response::HTTP_NOT_FOUND);
             }
-
-            $this->expenseRepository->delete($expense, Response::HTTP_OK);
-
             return $this->json(['message' => 'Expense deleted successfully'], Response::HTTP_OK);
         } catch (\Exception $e) {
             return $this->json([$e->getMessage()], Response::HTTP_BAD_REQUEST);

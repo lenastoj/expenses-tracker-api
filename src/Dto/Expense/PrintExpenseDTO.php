@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Dto\Expense;
 
-class WeekExpenseDTO
+class PrintExpenseDTO
 {
     /** @var ExpenseDTO[] */
     private array $expenseDTOs;
@@ -13,12 +13,15 @@ class WeekExpenseDTO
     private ?string $startDateRange;
     private ?string $endDateRange;
 
+    /**
+     * @param ExpenseDTO[] $expenses
+     */
     public function __construct(
         array $expenses,
-        $totalAmount,
-        $averagePerDayAmount,
-        $startDateRange = null,
-        $endDateRange = null
+        int $totalAmount,
+        int $averagePerDayAmount,
+        string | null $startDateRange = null,
+        string | null $endDateRange = null
     ) {
         $this->expenseDTOs = $expenses;
         $this->totalAmount = $totalAmount;
@@ -52,12 +55,15 @@ class WeekExpenseDTO
         return $this->endDateRange;
     }
 
+    /**
+     * @param ExpenseDTO[] $expenses
+     */
     public static function create(
         array $expenses,
-        $totalAmount,
-        $averagePerDayAmount,
-        $startDateRange,
-        $endDateRange
+        int $totalAmount,
+        int $averagePerDayAmount,
+        string | null $startDateRange,
+        string | null $endDateRange
     ): self {
         return new self(
             $expenses,

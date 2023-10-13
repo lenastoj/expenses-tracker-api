@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Application;
+namespace App\Application\Expense;
 
 use App\Dto\Expense\ExpenseDTO;
 use App\Repository\ExpenseRepository;
@@ -23,44 +23,52 @@ class ExpensesIndexService
         $this->userRepository = $userRepository;
     }
 
-    public function getExpenses($page, $userId, $id, $word, $sort, $order, $startDate, $endDate, $perPage = 5): array
-    {
-        if ($page < 1) {
-            $page = 1;
-        }
+    public function getExpenses(
+        int $userId,
+        int $id,
+        string | null $searchQuery,
+        string | null $sort,
+        string | null $sortDirection,
+        string | null $startDate,
+        string | null $endDate,
+        int $page,
+        int $perPage = 5
+    ): array {
+        $page = ($page < 1) ? 1 : $page;
+
         $hostUser = $this->userRepository->findOneBy(['id' => $userId]);
         $maybeGuestUser = $this->userRepository->findOneBy(['id' => $id]);
         $guestUser = $hostUser->getHosts()->contains($maybeGuestUser);
 
-        $query = $this->expenseRepository->getExpensesQueryBuilderForUser(
+        $query = $this->expenseRepository->getExpenses(
             $guestUser ? $id : $userId,
-            $word,
-            $sort,
-            $order,
+            false,
             $startDate,
             $endDate,
+            $searchQuery,
+            $sort,
+            $sortDirection,
         );
 
         $expenses = $this->pagination->paginate($query, $page, $perPage);
 
-        $totalExpenses = $this->expenseRepository->getExpensesQueryBuilderForUser(
+        $totalExpenses = $this->expenseRepository->getExpenses(
             $guestUser ? $id : $userId,
-            $word,
-            $sort,
-            $order,
+            true,
             $startDate,
             $endDate,
-            true,
+            $searchQuery,
+            $sort,
+            $sortDirection,
         );
 
         $totalExpensesCount = count($totalExpenses);
         $totalPages = ceil($totalExpensesCount / $perPage);
 
-        $data = [];
-        foreach ($expenses as $expense) {
-            $expenseDto = ExpenseDTO::createFromArray($expense);
-            $data[] = $expenseDto;
-        }
+        $data = array_map(function ($expense) {
+            return ExpenseDTO::createFromArray($expense);
+        }, $expenses);
+
         $metadata = [
             'page' => $page,
             'paginationLimit' => $perPage,

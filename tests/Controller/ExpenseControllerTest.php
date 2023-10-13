@@ -2,6 +2,7 @@
 
 namespace App\Tests\Controller;
 
+use App\Entity\User;
 use App\Repository\UserRepository;
 use App\Tests\Constants\ExpenseData;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
@@ -20,6 +21,12 @@ class ExpenseControllerTest extends WebTestCase
         $this->userRepository = $container->get(UserRepository::class);
     }
 
+    private function loginUser(): User | null
+    {
+        $testUser = $this->userRepository->findOneBy(['email' => 'pera@mail.com']);
+        $this->client->loginUser($testUser);
+        return $testUser;
+    }
     private function responseCheck($response, $expectedStatusCode, $expectedErrorMessage): void
     {
         $statusCode = $response->getStatusCode();
@@ -40,9 +47,7 @@ class ExpenseControllerTest extends WebTestCase
         $expectedStatusCode,
         $expectedErrorMessage = null
     ): void {
-        $testUser = $this->userRepository->findOneBy(['email' => 'pera@mail.com']);
-        $this->client->loginUser($testUser);
-
+        $this->loginUser();
         $this->client->request(
             'POST',
             '/api/expenses',
@@ -56,7 +61,7 @@ class ExpenseControllerTest extends WebTestCase
         $this->responseCheck($response, $expectedStatusCode, $expectedErrorMessage);
     }
 
-    public function provideCreateData(): array
+    private function provideCreateData(): array
     {
         return ExpenseData::CREATE_DATA;
     }
@@ -68,9 +73,8 @@ class ExpenseControllerTest extends WebTestCase
         $id,
         $expectedStatusCode,
         $expectedErrorMessage = null
-    ): void {
-        $testUser = $this->userRepository->findOneBy(['email' => 'pera@mail.com']);
-        $this->client->loginUser($testUser);
+    ): void {;
+        $this->loginUser();
         $this->client->request(
             'DELETE',
             '/api/expenses/' . $id,
@@ -80,7 +84,7 @@ class ExpenseControllerTest extends WebTestCase
         $this->responseCheck($response, $expectedStatusCode, $expectedErrorMessage);
     }
 
-    public function provideDeleteData(): array
+    private function provideDeleteData(): array
     {
         return ExpenseData::DELETE_DATA;
     }
@@ -94,8 +98,7 @@ class ExpenseControllerTest extends WebTestCase
         $expectedStatusCode,
         $expectedErrorMessage = null
     ): void {
-        $testUser = $this->userRepository->findOneBy(['email' => 'pera@mail.com']);
-        $this->client->loginUser($testUser);
+        $this->loginUser();
         $this->client->request(
             'PUT',
             '/api/expenses/' . $id,
@@ -108,7 +111,7 @@ class ExpenseControllerTest extends WebTestCase
         $this->responseCheck($response, $expectedStatusCode, $expectedErrorMessage);
     }
 
-    public function provideUpdateData(): array
+    private function provideUpdateData(): array
     {
         return ExpenseData::UPDATE_DATA;
     }
@@ -121,8 +124,7 @@ class ExpenseControllerTest extends WebTestCase
         $expectedStatusCode,
         $expectedErrorMessage = null
     ): void {
-        $testUser = $this->userRepository->findOneBy(['email' => 'pera@mail.com']);
-        $this->client->loginUser($testUser);
+        $this->loginUser();
         $this->client->request(
             'GET',
             '/api/expenses/' . $id,
@@ -132,7 +134,7 @@ class ExpenseControllerTest extends WebTestCase
         $this->responseCheck($response, $expectedStatusCode, $expectedErrorMessage);
     }
 
-    public function provideShowSingleData(): array
+    private function provideShowSingleData(): array
     {
         return ExpenseData::SHOW_SINGLE_DATA;
     }
@@ -146,9 +148,7 @@ class ExpenseControllerTest extends WebTestCase
         $expectedStatusCode,
         $expectedErrorMessage = null
     ): void {
-        $testUser = $this->userRepository->findOneBy(['email' => 'pera@mail.com']);
-        $this->client->loginUser($testUser);
-
+        $this->loginUser();
         $filters = "?page=$page";
         foreach ($params as $key => $value) {
             $filters = $filters . "&$key=$value";
@@ -163,7 +163,7 @@ class ExpenseControllerTest extends WebTestCase
         $this->responseCheck($response, $expectedStatusCode, $expectedErrorMessage);
     }
 
-    public function provideShowExpensesData(): array
+    private function provideShowExpensesData(): array
     {
         return ExpenseData::SHOW_DATA;
     }
@@ -177,9 +177,7 @@ class ExpenseControllerTest extends WebTestCase
         $expectedStatusCode,
         $expectedErrorMessage = null
     ): void {
-        $testUser = $this->userRepository->findOneBy(['email' => 'pera@mail.com']);
-        $this->client->loginUser($testUser);
-
+        $this->loginUser();
         $filters = "?";
         foreach ($params as $key => $value) {
             if (array_key_first($params) === $key) {
@@ -198,7 +196,7 @@ class ExpenseControllerTest extends WebTestCase
         $this->responseCheck($response, $expectedStatusCode, $expectedErrorMessage);
     }
 
-    public function providePrintExpensesData(): array
+    private function providePrintExpensesData(): array
     {
         return ExpenseData::PRINT_DATA;
     }

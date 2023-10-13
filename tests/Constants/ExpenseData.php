@@ -40,13 +40,25 @@ class ExpenseData
             [],
             Response::HTTP_OK,
         ],
+        [
+            [
+                'week' => 'true',
+            ],
+            Response::HTTP_OK,
+        ],
+        [
+            [
+                'week' => 'false',
+            ],
+            Response::HTTP_OK,
+        ],
     ];
     public const SHOW_DATA = [
         [
             'page' => 1,
             [
                 'sort' => 'amount',
-                'order' => 'desc',
+                'sortDirection' => 'desc',
             ],
             Response::HTTP_OK,
         ],
@@ -54,8 +66,8 @@ class ExpenseData
             'page' => 1,
             [
                 'sort' => 'description',
-                'order' => 'asc',
-                'word' => 'ample',
+                'sortDirection' => 'asc',
+                'searchQuery' => 'ample',
             ],
             Response::HTTP_OK,
         ],
@@ -70,7 +82,7 @@ class ExpenseData
         [
             'page' => 10,
             [],
-            Response::HTTP_NOT_FOUND,
+            Response::HTTP_OK,
             ['message' => 'No expenses'],
         ],
         [
@@ -81,7 +93,7 @@ class ExpenseData
         [
             'page' => 50,
             [],
-            Response::HTTP_NOT_FOUND,
+            Response::HTTP_OK,
         ],
     ];
 
@@ -95,6 +107,10 @@ class ExpenseData
             Response::HTTP_NOT_FOUND,
             ['message' => 'Expense not found'],
         ],
+        [
+            'id' => 'bb',
+            Response::HTTP_INTERNAL_SERVER_ERROR,
+        ],
     ];
     public const UPDATE_DATA = [
         [
@@ -102,11 +118,11 @@ class ExpenseData
             [
                 'date' => '2023-08-02',
                 'time' => '10:00:00',
-                'description' => 'Update expense',
+                'description' => 'Update expense again',
                 'amount' => 10,
-                'comment' => 'Update comment',
+                'comment' => 'Update comment again',
             ],
-            Response::HTTP_OK,
+            Response::HTTP_CREATED,
             ['message' => 'Expense updated successfully'],
         ],
         [
@@ -114,24 +130,41 @@ class ExpenseData
             [
                 'date' => '2023-08-02',
                 'time' => '10:00:00',
-                'description' => 'Update expense',
+                'description' => 'Update expense again',
                 'amount' => 10,
-                'comment' => 'Update comment',
+                'comment' => 'Update comment again',
             ],
-            Response::HTTP_NOT_FOUND,
+            Response::HTTP_BAD_REQUEST,
             ['message' => 'Expense not found'],
+        ],
+        [
+            'id' => 13,
+            [
+                'date' => '2023-08-02',
+                'time' => '10:00:00',
+                'description' => '',
+                'amount' => 10,
+                'comment' => 'Update comment again',
+            ],
+            Response::HTTP_BAD_REQUEST,
+            ['description' => ['Description cannot be blank.', 'Description cannot be less than 2 characters.'],
+            ],
         ],
     ];
 
     public const DELETE_DATA = [
         [
-            'id' => 2,
+            'id' => 1,
             Response::HTTP_NOT_FOUND,
             ['message' => 'Expense not found'],
         ],
         [
-            'id' => 12,
+            'id' => 20,
             Response::HTTP_OK,
+        ],
+        [
+            'id' => 'bb',
+            Response::HTTP_INTERNAL_SERVER_ERROR,
         ],
     ];
     public const CREATE_DATA = [
