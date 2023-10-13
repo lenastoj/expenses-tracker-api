@@ -26,7 +26,7 @@ class UserData
             ['email' => 'pera@mail.com',],
             Response::HTTP_BAD_REQUEST,
             [
-                'email' => ['You cant not invite yourself.'],
+                'email' => ['You cannot invite yourself.'],
             ]
         ],
         [

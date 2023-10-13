@@ -40,7 +40,7 @@ class AddGuestService
             return ['email' => ['User is already on the guests list.']];
         }
         if ($guestUser === $hostUser) {
-            return ['email' => ['You cant not invite yourself.']];
+            return ['email' => ['You cannot invite yourself.']];
         }
         $sendEmail = $this->sendEmail($hostUser, $guestUser);
         if ($sendEmail) {

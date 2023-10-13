@@ -89,20 +89,3 @@ class AuthController extends AbstractController
         }
     }
 }
-//
-///**
-// * @return array{user: UserDto, hosts: UserDto[]}
-// */
-//public function getActiveUser(int $userId): array
-//{
-//    $hostUser = $this->userRepository->findOneBy(['id' => $userId]);
-//    $hosts = $hostUser->getHosts()->getValues();
-//    $filteredHosts = array_map(function ($user) {
-//        return UserDto::createFromEntity($user);
-//    }, $hosts);
-//
-//    return [
-//        'user' => UserDto::createFromEntity($hostUser),
-//        'hosts' => $filteredHosts,
-//    ];
-//}
